@@ -26,18 +26,13 @@ http://sourceforge.net/projects/assimp/files/assimp-3.0/assimp--3.0.1270-source-
 ####Build instructions on OSX
 
 <pre>
-unzip assimp--3.0.1270-source-only.zip
-cd assimp--3.0.1270-source-only
-mkdir build
-cd build
-cmake -DENABLE_BOOST_WORKAROUND=ON -DBUILD_STATIC_LIB=ON \
-	-D"CMAKE_OSX_ARCHITECTURES=i386;x86_64" \
-	-DCMAKE_CXX_FLAGS="-fvisibility-inlines-hidden" \
-	-DCMAKE_CXX_COMPILER=/usr/bin/g++ ..
+git clone git://github.com/assimp/assimp.git
+cd assimp
+cmake -G "Unix Makefiles" -DBOOST_ROOT="../cinder_master/boost" -DCMAKE_CXX_FLAGS="-stdlib=libc++ -fvisibility-inlines-hidden" -DCMAKE_BUILD_TYPE=Release -DASSIMP_BUILD_STATIC_LIB=true -DCMAKE_OSX_ARCHITECTURES="i386;x86_64"
 make
 </pre>
 
-which creates libassimp.a in the code/ directory.
+which creates libassimp.a in the lib/ directory.
 
 ####Build instructions on Windows
 

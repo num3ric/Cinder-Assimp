@@ -16,7 +16,7 @@
 */
 
 #include "cinder/Cinder.h"
-#include "cinder/app/AppBasic.h"
+#include "cinder/app/AppNative.h"
 #include "cinder/ImageIo.h"
 #include "cinder/TriMesh.h"
 #include "cinder/Camera.h"
@@ -33,7 +33,7 @@ using namespace std;
 
 using namespace mndl;
 
-class AssimpApp : public AppBasic
+class AssimpApp : public AppNative
 {
 	public:
 		void prepareSettings( Settings *settings );
@@ -159,5 +159,5 @@ void AssimpApp::resize()
 	mMayaCam.setCurrentCam( cam );
 }
 
-CINDER_APP_BASIC( AssimpApp, RendererGl(0) )
+CINDER_APP_NATIVE( AssimpApp, RendererGl(0) )
 
