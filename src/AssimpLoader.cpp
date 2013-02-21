@@ -84,15 +84,27 @@ static void fromAssimp( const aiMesh *aim, TriMesh *cim )
 							 aim->mFaces[ i ].mIndices[ 2 ] );
 	}
 }
-
-AssimpLoader::AssimpLoader( fs::path filename ) :
+	
+AssimpLoader::AssimpLoader(fs::path filename) :
 	mMaterialsEnabled( false ),
 	mTexturesEnabled( true ),
 	mSkinningEnabled( false ),
 	mAnimationEnabled( false ),
-	mFilePath( filename ),
-	mAnimationIndex( 0 )
+	mAnimationIndex( 0 ),
+	mScene( nullptr )
 {
+	mImporterRef = shared_ptr< Assimp::Importer >( new Assimp::Importer() );
+	mImporterRef->SetPropertyInteger( AI_CONFIG_PP_SBP_REMOVE,
+									 aiPrimitiveType_LINE | aiPrimitiveType_POINT );
+	mImporterRef->SetPropertyInteger( AI_CONFIG_PP_PTV_NORMALIZE, true );
+		
+	if ( !filename.empty() )
+		load(filename);
+}
+	
+void AssimpLoader::load( fs::path filename )
+{
+	mFilePath = filename;
 	// FIXME: aiProcessPreset_TargetRealtime_MaxQuality contains
 	// aiProcess_Debone which is buggy in 3.0.1270
 	unsigned flags = aiProcess_Triangulate |
@@ -101,13 +113,10 @@ AssimpLoader::AssimpLoader( fs::path filename ) :
 					 aiProcess_FindInstances |
 					 aiProcess_ValidateDataStructure |
 					 aiProcess_OptimizeMeshes;
-
-	mImporterRef = shared_ptr< Assimp::Importer >( new Assimp::Importer() );
-	mImporterRef->SetPropertyInteger( AI_CONFIG_PP_SBP_REMOVE,
-			aiPrimitiveType_LINE | aiPrimitiveType_POINT );
-	mImporterRef->SetPropertyInteger( AI_CONFIG_PP_PTV_NORMALIZE, true );
-
+	
+	//reading a file will automatically free an already existing scene 
 	mScene = mImporterRef->ReadFile( filename.string(), flags );
+	
 	if ( !mScene )
 		throw AssimpLoaderExc( mImporterRef->GetErrorString() );
 
@@ -132,15 +141,17 @@ void AssimpLoader::calculateDimensions()
 
 void AssimpLoader::calculateBoundingBox( ci::Vec3f *min, ci::Vec3f *max )
 {
-	aiMatrix4x4 trafo;
-
-	aiVector3D aiMin, aiMax;
-	aiMin.x = aiMin.y = aiMin.z =  1e10f;
-	aiMax.x = aiMax.y = aiMax.z = -1e10f;
-
-	calculateBoundingBoxForNode( mScene->mRootNode, &aiMin, &aiMax, &trafo );
-	*min = fromAssimp( aiMin );
-	*max = fromAssimp( aiMax );
+	if ( mScene ) {
+		aiMatrix4x4 trafo;
+		
+		aiVector3D aiMin, aiMax;
+		aiMin.x = aiMin.y = aiMin.z =  1e10f;
+		aiMax.x = aiMax.y = aiMax.z = -1e10f;
+		
+		calculateBoundingBoxForNode( mScene->mRootNode, &aiMin, &aiMax, &trafo );
+		*min = fromAssimp( aiMin );
+		*max = fromAssimp( aiMax );
+	}
 }
 
 void AssimpLoader::calculateBoundingBoxForNode( const aiNode *nd, aiVector3D *min, aiVector3D *max, aiMatrix4x4 *trafo )
@@ -221,6 +232,7 @@ AssimpNodeRef AssimpLoader::loadNodes( const aiNode *nd, AssimpNodeRef parentRef
 
 AssimpMeshRef AssimpLoader::convertAiMesh( const aiMesh *mesh )
 {
+	assert( mScene );
 	// the current AssimpMesh we will be populating data into.
 	AssimpMeshRef assimpMeshRef = AssimpMeshRef( new AssimpMesh() );
 
@@ -413,6 +425,7 @@ AssimpMeshRef AssimpLoader::convertAiMesh( const aiMesh *mesh )
 
 void AssimpLoader::loadAllMeshes()
 {
+	assert( mScene );
 	for ( unsigned i = 0; i < mScene->mNumMeshes; ++i )
 	{
 		string name = fromAssimp( mScene->mMeshes[ i ]->mName );
@@ -437,6 +450,7 @@ const string AssimpLoader::getCameraName( size_t n ) const
 
 void AssimpLoader::loadCameras()
 {
+	assert( mScene );
 	for ( unsigned i = 0; i < mScene->mNumCameras; ++i )
 	{
 		aiCamera *aiCam = mScene->mCameras[ i ];
@@ -464,7 +478,7 @@ void AssimpLoader::loadCameras()
 
 void AssimpLoader::updateAnimation( size_t animationIndex, double currentTime )
 {
-	if ( mScene->mNumAnimations == 0 )
+	if ( !mScene || mScene->mNumAnimations == 0 )
 		return;
 
 	const aiAnimation *mAnim = mScene->mAnimations[ animationIndex ];
@@ -674,7 +688,10 @@ Quatf AssimpLoader::getNodeOrientation( const string &name )
 
 size_t AssimpLoader::getNumAnimations() const
 {
-	return mScene->mNumAnimations;
+	if ( mScene ) {
+		return mScene->mNumAnimations;
+	}
+	return 0;
 }
 
 void AssimpLoader::setAnimation( size_t n )
@@ -689,11 +706,15 @@ void AssimpLoader::setTime( double t )
 
 double AssimpLoader::getAnimationDuration( size_t n ) const
 {
-	const aiAnimation *anim = mScene->mAnimations[ n ];
-	double ticks = anim->mTicksPerSecond;
-	if ( ticks == 0.0 )
-		ticks = 1.0;
-	return anim->mDuration / ticks;
+	if ( mScene && mScene->HasAnimations() ){
+		const aiAnimation *anim = mScene->mAnimations[ n ];
+		double ticks = anim->mTicksPerSecond;
+		if ( ticks == 0.0 )
+			ticks = 1.0;
+		return anim->mDuration / ticks;
+	} else {
+		return 0.0;
+	}
 }
 
 void AssimpLoader::updateSkinning()

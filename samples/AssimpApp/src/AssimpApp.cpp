@@ -37,8 +37,8 @@ class AssimpApp : public AppNative
 {
 	public:
 		void prepareSettings( Settings *settings );
+		void fileDrop(FileDropEvent event);
 		void setup();
-
 		void resize();
 		void mouseDown( MouseEvent event );
 		void mouseDrag( MouseEvent event );
@@ -66,11 +66,21 @@ void AssimpApp::prepareSettings( Settings *settings )
 	settings->setWindowSize( 640, 480 );
 }
 
+void AssimpApp::fileDrop( FileDropEvent event )
+{
+	try {
+		mAssimpLoader.load( event.getFile( 0 ) );
+		mAssimpLoader.setAnimation( 0 );
+	}
+	catch( ... ) {
+		console() << "unable to load the asset!" << std::endl;
+	};
+}
+
 void AssimpApp::setup()
 {
-	mAssimpLoader = assimp::AssimpLoader( getAssetPath( "astroboy_walk.dae" ) );
-	mAssimpLoader.setAnimation( 0 );
-
+//	mAssimpLoader = assimp::AssimpLoader( getAssetPath( "astroboy_walk.dae" ) );
+//	mAssimpLoader.setAnimation( 0 );
 
 	CameraPersp cam;
 	cam.setPerspective( 60, getWindowAspectRatio(), 0.1f, 1000.0f );

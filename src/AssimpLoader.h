@@ -124,10 +124,11 @@ typedef std::shared_ptr< AssimpNode > AssimpNodeRef;
 class AssimpLoader
 {
 	public:
-		AssimpLoader() {}
-
-		//! Constructs and does the parsing of the file from \a filename.
-		AssimpLoader( ci::fs::path filename );
+		//! Constructor which directly loads an asset given an optional filename.
+		AssimpLoader( ci::fs::path filename = "" );
+				
+		//! Does the parsing of the file from \a filename.
+		void load( ci::fs::path filename );
 
 		//! Updates model animation and skinning.
 		void update();
@@ -235,7 +236,7 @@ class AssimpLoader
 
 		std::shared_ptr< Assimp::Importer > mImporterRef; // mScene will be destroyed along with the Importer object
 		ci::fs::path mFilePath; /// model path
-		const aiScene *mScene;
+		const aiScene* mScene;
 
 		ci::AxisAlignedBox3f mBoundingBox;
 
