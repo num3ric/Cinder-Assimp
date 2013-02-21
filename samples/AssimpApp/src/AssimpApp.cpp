@@ -69,7 +69,7 @@ void AssimpApp::prepareSettings( Settings *settings )
 void AssimpApp::fileDrop( FileDropEvent event )
 {
 	try {
-		mAssimpLoader.load( event.getFile( 0 ) );
+		mAssimpLoader = assimp::AssimpLoader( event.getFile( 0 ) );
 		mAssimpLoader.setAnimation( 0 );
 	}
 	catch( ... ) {

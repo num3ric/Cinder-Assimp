@@ -126,9 +126,6 @@ class AssimpLoader
 	public:
 		//! Constructor which directly loads an asset given an optional filename.
 		AssimpLoader( ci::fs::path filename = "" );
-				
-		//! Does the parsing of the file from \a filename.
-		void load( ci::fs::path filename );
 
 		//! Updates model animation and skinning.
 		void update();
@@ -221,6 +218,7 @@ class AssimpLoader
 		const std::string getCameraName( size_t n ) const;
 
 	private:
+		void load( ci::fs::path filename );
 		void loadAllMeshes();
 		AssimpNodeRef loadNodes( const aiNode* nd, AssimpNodeRef parentRef = AssimpNodeRef() );
 		AssimpMeshRef convertAiMesh( const aiMesh *mesh );
